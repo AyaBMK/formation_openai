@@ -1,27 +1,49 @@
 from openai import OpenAI
 import streamlit as st
-from dotenv import load_dotenv
-import os
+ 
+client = OpenAI()
 
-load_dotenv()
-key = os.getenv("OPEN_API_KEY")
-client = OpenAI(api_key=key)
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-value = st.chat_input("Prompt...")
-if (value):
+def new_message(content: str):
     with (st.chat_message("user")):
-        st.write(value)
-    
+        st.session_state.messages.append({"role":"user", "content": content})
+        st.write(content)
+
     with (st.chat_message("assistant")):
-        txt = st.header("Waiting for api...")
+        field = st.text("waiting for an answer...")
+    
+        completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "user","content": content}
+        ]
+        )
+        
+        st.session_state.messages.append({"role": "assistant", "content": completion.choices[0].message.content})
+        field.text(completion.choices[0].message.content)
 
-    completion = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {"role": "user","content": value}
-    ]
-    )
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.text(message["content"])
+value = st.chat_input("Say something")
+if (value and value != ""):
+    new_message(value)
+    value = ""
 
-    txt.text(completion.choices[0].message.content)
+# import streamlit as st
 
+# path = "root/pages/"
+# pg = st.navigation([
+#         st.Page(path + "Home.py", icon=":material/home:"), 
+#         st.Page(path + "NLP.py", title="1. Natural Language Processing (NLP)"),
+#         st.Page(path + "OpenAI.py", title="2. API OpenAI"), 
+#         st.Page(path + "DALL-E.py", title="3. API DALL-E 2"),
+
+#         st.Page(path + "Whisper.py", title="4. Whisper"),
+#         st.Page(path + "Fine-tuning.py", title="5. Fine-tuning"),
+#         st.Page(path + "Exercise.py", title="6. Exercice final"),
+#     ]) 
+# pg.run()
 
